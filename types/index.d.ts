@@ -34,7 +34,7 @@ export type LimitView = { kind: string; percentUsed: number; resetsAt?: string }
 
 export type AgentView = { id: string; description: string; type: string; status: string }
 
-export type McpView = { server: string; tools: number; tokens: number }
+export type McpView = { server: string; tools: number; loaded: number; tokens: number }
 
 export type CronView = { id: string; schedule: string; prompt: string; nextFireAt?: number }
 

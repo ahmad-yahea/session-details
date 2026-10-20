@@ -161,16 +161,23 @@ export function meterCells(percent: number, width: number): { filled: number; em
 export const limitColor = (percent: number): 'success' | 'warning' | 'error' =>
   percent >= 90 ? 'error' : percent >= 70 ? 'warning' : 'success'
 
-/** MCP tools grouped by server, biggest first. */
+/**
+ * MCP tools grouped by server. `tokens` counts only the loaded schemas: a
+ * deferred tool sits outside the window until it is searched for.
+ * Biggest context cost first, then by name.
+ */
 export function mcpServers(
-  tools: readonly { serverName: string; tokens: number }[],
+  tools: readonly { serverName: string; tokens: number; isLoaded: boolean }[],
 ): McpView[] {
   const by = new Map<string, McpView>()
   for (const t of tools) {
-    const one = by.get(t.serverName) ?? { server: t.serverName, tools: 0, tokens: 0 }
+    const one = by.get(t.serverName) ?? { server: t.serverName, tools: 0, loaded: 0, tokens: 0 }
     one.tools += 1
-    one.tokens += t.tokens
+    if (t.isLoaded) {
+      one.loaded += 1
+      one.tokens += t.tokens
+    }
     by.set(t.serverName, one)
   }
-  return [...by.values()].sort((a, b) => b.tokens - a.tokens)
+  return [...by.values()].sort((a, b) => b.tokens - a.tokens || a.server.localeCompare(b.server))
 }

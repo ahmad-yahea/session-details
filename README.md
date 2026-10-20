@@ -16,8 +16,8 @@ Every section has a clickable `▾`/`▸` header that collapses it.
 | **Limits** | The 5-hour, 7-day and spend windows: a bar, % used, and a live "resets in 2h 14m" countdown |
 | **Outputs** | Files written this session (Write, NotebookEdit, Artifact), newest first |
 | **Background tasks** | Running tasks with elapsed time, and a finished/failed count |
-| **Subagents** | Running subagents and a finished count |
-| **MCP servers** | Connected servers with tool counts and token cost |
+| **Subagents** | Every running subagent and a finished count |
+| **MCP servers** | Every server with tools, how many of its tools are loaded, and the tokens those loaded tools take in context (deferred tools cost nothing until used) |
 | **Scheduled** | Cron jobs and when they next run |
 
 Subagents, MCP servers and Scheduled only appear when there is something to show.

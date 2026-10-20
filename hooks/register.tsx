@@ -427,27 +427,46 @@ export const register: Register = on => {
 
       return (
         <Box flexDirection="column">
-          {running.slice(0, 5).map(a => (
+          {running.map(a => (
             <Text>{clip(`▶ ${a.description || a.type}`, width)}</Text>
           ))}
-          {running.length > 5 && <Text dimColor>{`+${running.length - 5} more`}</Text>}
           {done > 0 && <Text dimColor>{`◇ ${done} finished`}</Text>}
         </Box>
       )
     }
 
-    const mcpBody = () => (
-      <Box flexDirection="column">
-        {servers.slice(0, 8).map(m => (
-          <Text>{clip(`● ${m.server} · ${m.tools} tools · ${fmtTokens(m.tokens)}`, width)}</Text>
-        ))}
-        {servers.length > 8 && <Text dimColor>{`+${servers.length - 8} more`}</Text>}
-      </Box>
-    )
+    const mcpBody = () => {
+      const toolW = 8
+      const tokW = 7
+      const nameW = Math.max(4, width - 2 - toolW - tokW)
+      const tools = servers.reduce((n, m) => n + m.tools, 0)
+      const inContext = servers.reduce((n, m) => n + m.tokens, 0)
+
+      return (
+        <Box flexDirection="column">
+          <Text dimColor>
+            {clip(`${servers.length} servers · ${tools} tools · ${fmtTokens(inContext)} in context`, width)}
+          </Text>
+          <Text dimColor>{`${''.padEnd(nameW + 2)}${'loaded'.padStart(toolW)}${'tokens'.padStart(tokW)}`}</Text>
+          {servers.map(m => {
+            const row = `${clip(m.server, nameW).padEnd(nameW)}${`${m.loaded}/${m.tools}`.padStart(toolW)}${(m.loaded > 0 ? fmtTokens(m.tokens) : '—').padStart(tokW)}`
+
+            return m.loaded > 0 ? (
+              <Text>
+                <Text color="success">●</Text>
+                {` ${row}`}
+              </Text>
+            ) : (
+              <Text dimColor>{`○ ${row}`}</Text>
+            )
+          })}
+        </Box>
+      )
+    }
 
     const cronsBody = () => (
       <Box flexDirection="column">
-        {jobs.slice(0, 5).map(j => {
+        {jobs.map(j => {
           const next = fmtResetIn(j.nextFireAt, clock)
 
           return (
@@ -456,7 +475,6 @@ export const register: Register = on => {
             </Text>
           )
         })}
-        {jobs.length > 5 && <Text dimColor>{`+${jobs.length - 5} more`}</Text>}
       </Box>
     )
 

@@ -1,0 +1,6 @@
+{
+  "name": "session-details",
+  "version": "0.1.0",
+  "description": "A live side pane mirroring the desktop app's session details: environment, context, outputs and background tasks.",
+  "types": "./types/index.d.ts"
+}

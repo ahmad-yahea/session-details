@@ -1,6 +1,8 @@
 {
   "name": "session-details",
-  "version": "0.1.0",
-  "description": "A live side pane mirroring the desktop app's session details: environment, context, outputs and background tasks.",
+  "version": "0.2.0",
+  "description": "A live side pane for Claude Code: model, effort, cost, context, rate limits with reset countdowns, outputs, background tasks, subagents and MCP servers.",
+  "author": { "name": "ahmad-yahea" },
+  "license": "MIT",
   "types": "./types/index.d.ts"
 }

@@ -2,7 +2,7 @@
 
 A live side pane for Claude Code that shows what your session is doing, at a glance. It is the terminal version of the desktop app's session details sidebar.
 
-It opens by itself when a session starts. `/session-details` reopens it.
+In Claude Code's fullscreen layout it opens by itself as a sidebar beside the conversation. On the normal screen it stays out of the way until you type `/session-details`. It then opens compactly above the prompt, with only Session and Limits expanded, and redraws at most once a minute unless a task is running.
 
 ## What it shows
 

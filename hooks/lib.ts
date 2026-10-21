@@ -240,3 +240,32 @@ export function cleanTitle(raw: string): string {
     70,
   )
 }
+
+/** Sections folded by default where the pane sits inline above the prompt. */
+export const INLINE_FOLDED: ReadonlySet<string> = new Set([
+  'environment',
+  'context',
+  'outputs',
+  'agents',
+  'mcp',
+  'crons',
+])
+
+/** Whether a section is folded: the person's choice, else the placement's default. */
+export function isFolded(
+  choices: Readonly<Record<string, boolean>>,
+  id: string,
+  placement: 'dock' | 'inline',
+): boolean {
+  return choices[id] ?? (placement === 'inline' && INLINE_FOLDED.has(id))
+}
+
+/**
+ * Whether the clock tick should redraw: every second while something runs
+ * (an elapsed timer shows seconds), else once a minute while a countdown
+ * shows (resets and next runs show minutes), else never.
+ */
+export function tickRedraws(isRunning: boolean, hasCountdown: boolean, prev: number, at: number): boolean {
+  if (isRunning) return true
+  return hasCountdown && Math.floor(at / 60000) !== Math.floor(prev / 60000)
+}

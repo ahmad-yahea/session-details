@@ -14,6 +14,7 @@ import {
   fmtResetIn,
   fmtTokens,
   fmtUsd,
+  isFolded,
   limitColor,
   limitLabel,
   mcpServers,
@@ -23,6 +24,7 @@ import {
   pushOutput,
   taskLabel,
   textOf,
+  tickRedraws,
   titleDigest,
   titleDue,
 } from './lib'
@@ -189,7 +191,6 @@ export const register: Register = on => {
       name: 'session-details',
       description: 'Open the session details pane',
     })
-    void $.ui.open({ id: PANE, title: 'Session' })
     await Promise.all([
       refreshEnv($),
       refreshContext($),
@@ -203,15 +204,28 @@ export const register: Register = on => {
     $.clock.every(1000, async () => {
       const hasAgents = (await read($, agents)).some(a => a.status === 'running')
       if (hasAgents) await refreshAgents($)
-      const isTimed =
-        hasAgents ||
-        (await read($, tasks)).some(isRunning) ||
-        (await read($, limits)).some(l => l.resetsAt !== undefined)
-      if (isTimed) {
-        const at = await $.clock.now()
+      const isBusy = hasAgents || (await read($, tasks)).some(isRunning)
+      const hasCountdown =
+        (await read($, limits)).some(l => l.resetsAt !== undefined) ||
+        (await read($, crons)).some(c => c.nextFireAt !== undefined)
+      const at = await $.clock.now()
+      if (tickRedraws(isBusy, hasCountdown, await read($, now), at)) {
         await update($, now, () => at)
       }
     })
+
+    return next(e)
+  })
+
+  // Opened unasked only where the terminal docks it beside the transcript
+  // (the fullscreen layout). On the main screen it would sit inline above the
+  // prompt and push the conversation around, so there /session-details opens it.
+  let isOffered = false
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (!isOffered && e.viewport?.isFullscreen === true) {
+      isOffered = true
+      void $.ui.open({ id: PANE, title: 'Session' })
+    }
 
     return next(e)
   })
@@ -354,11 +368,14 @@ export const register: Register = on => {
     const servers = await read($, mcp)
     const jobs = await read($, crons)
 
+    const placement = e.props.placement
+    const folded = (id: string) => isFolded(fold, id, placement)
+
     const header = (id: string, title: string) => (
       <Button
         key={`toggle-${id}`}
-        label={`${fold[id] ? '▸' : '▾'} ${title}`}
-        onPress={() => update($, collapsed, m => ({ ...m, [id]: !m[id] }))}
+        label={`${folded(id) ? '▸' : '▾'} ${title}`}
+        onPress={() => update($, collapsed, m => ({ ...m, [id]: !isFolded(m, id, placement) }))}
       />
     )
 
@@ -481,9 +498,22 @@ export const register: Register = on => {
               {clip('Untitled session', width)}
             </Text>
           )}
-          <Text>{clip(`${info.model} · effort ${level ?? '—'}`, width)}</Text>
-          <Text dimColor>{clip(facts.join(' · '), width)}</Text>
-          <Text dimColor>{clip(`▤ ${info.repo ?? basename(info.cwd)}`, width)}</Text>
+          <Box flexDirection="column" marginTop={1}>
+            <Box>
+              <Box width={8}>
+                <Text dimColor>Model</Text>
+              </Box>
+              <Text>{clip(info.model, Math.max(4, width - 8))}</Text>
+            </Box>
+            <Box>
+              <Box width={8}>
+                <Text dimColor>Effort</Text>
+              </Box>
+              <Text>{level ?? '—'}</Text>
+            </Box>
+            <Text dimColor>{clip(facts.join(' · '), width)}</Text>
+            <Text dimColor>{clip(`▤ ${info.repo ?? basename(info.cwd)}`, width)}</Text>
+          </Box>
         </Box>
       )
     }
@@ -578,7 +608,7 @@ export const register: Register = on => {
     const section = (id: string, title: string, body: () => ReturnType<typeof tasksBody>) => (
       <Box flexDirection="column">
         {header(id, title)}
-        {!fold[id] && body()}
+        {!folded(id) && body()}
       </Box>
     )
 

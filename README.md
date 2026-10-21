@@ -44,6 +44,10 @@ Answer `y` to add the marketplace, then pick a scope (user scope applies to ever
 - A terminal wide enough to dock the pane (about 110 columns). On narrower terminals it opens above the prompt instead.
 - Limits only appear on a subscription that reports them. Effort appears after your first prompt.
 
+## Installed twice?
+
+Only one copy ever runs. This can happen when the plugin is enabled at more than one scope, from two marketplaces, or alongside a `--plugin-dir` copy. Whichever copy loads first refuses the others, so you get one pane and one `/session-details`. The Environment section names each skipped copy (`⚠ duplicate skipped: …`) so you can uninstall the one you don't want. Installing at user scope keeps things simple.
+
 ## How it works
 
 The mod is a single hooks module (`hooks/register.tsx`). It reads session data from Claude Code's own `$.session`, `$.agent` and context-breakdown APIs and draws a `Pane`. It makes no network calls, writes no files and stores nothing outside the session.

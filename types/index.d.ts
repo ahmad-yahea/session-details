@@ -38,6 +38,8 @@ export type McpView = { server: string; tools: number; loaded: number; tokens: n
 
 export type CronView = { id: string; schedule: string; prompt: string; nextFireAt?: number }
 
+export type SkippedCopy = { provenance: string; root: string; version: string | null }
+
 export type EnvView = { surfaces: string[] }
 
 declare module 'claude-code' {
@@ -52,6 +54,7 @@ declare module 'claude-code' {
       session: SessionView | null
       effort: string | null
       title: string | null
+      skipped: SkippedCopy[]
       limits: LimitView[]
       agents: AgentView[]
       mcp: McpView[]

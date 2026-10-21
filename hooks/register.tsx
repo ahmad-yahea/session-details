@@ -7,6 +7,7 @@ import {
   barRuns,
   basename,
   clip,
+  duplicateOf,
   fmtElapsed,
   fmtPercent,
   fmtResetIn,
@@ -35,6 +36,7 @@ const now = atom({ plugin: 'session-details', key: 'now' } as const, 0)
 const session = atom({ plugin: 'session-details', key: 'session' } as const, null)
 const effort = atom({ plugin: 'session-details', key: 'effort' } as const, null)
 const title = atom({ plugin: 'session-details', key: 'title' } as const, null)
+const skipped = atom({ plugin: 'session-details', key: 'skipped' } as const, [])
 const limits = atom({ plugin: 'session-details', key: 'limits' } as const, [])
 const agents = atom({ plugin: 'session-details', key: 'agents' } as const, [])
 const mcp = atom({ plugin: 'session-details', key: 'mcp' } as const, [])
@@ -132,6 +134,20 @@ async function refreshContext($: EngineInterface) {
 }
 
 export const register: Register = on => {
+  // One copy per session: a second session-details (another scope, a
+  // --plugin-dir, another marketplace) would register the same command and
+  // pane. The copy already loaded refuses any other folder's; its own folder
+  // is a reload and passes. A failing guard lets the newcomer load.
+  on('plugin.register', async ($, e, next) => {
+    const copy = duplicateOf({ name: $.plugin.name, root: $.plugin.root }, e)
+    if (!copy) return next(e)
+    await update($, skipped, list => [...list.filter(s => s.root !== copy.root), copy])
+
+    return {
+      refuse: `${$.plugin.name} is already loaded from ${$.plugin.root}; skipped the copy at ${e.root}`,
+    }
+  }).catch(($, e, next) => next(e))
+
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'session-details',
@@ -294,6 +310,7 @@ export const register: Register = on => {
     const info = await read($, session)
     const level = await read($, effort)
     const name = await read($, title)
+    const dupes = await read($, skipped)
     const windows = await read($, limits)
     const subagents = await read($, agents)
     const servers = await read($, mcp)
@@ -308,12 +325,22 @@ export const register: Register = on => {
     )
 
     const remote = surfaces.filter(s => s !== 'terminal')
-    const environment =
+    const connection =
       remote.length > 0 ? (
         <Text color="success">{clip(`● Remote Control · ${remote.join(', ')}`, width)}</Text>
       ) : (
         <Text dimColor>{clip('○ Local terminal · /remote-control to connect', width)}</Text>
       )
+    const environment = (
+      <Box flexDirection="column">
+        {connection}
+        {dupes.map(d => (
+          <Text color="warning">
+            {clip(`⚠ duplicate skipped: ${d.provenance}${d.version ? ` v${d.version}` : ''}`, width)}
+          </Text>
+        ))}
+      </Box>
+    )
 
     const contextBody = () => {
       if (!ctx) return <Text dimColor>No context data yet.</Text>

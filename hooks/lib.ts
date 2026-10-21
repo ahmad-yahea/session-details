@@ -1,4 +1,4 @@
-import type { ContextRow, McpView, TaskStatus } from '../types'
+import type { ContextRow, McpView, SkippedCopy, TaskStatus } from '../types'
 
 type Rec = Record<string, unknown>
 
@@ -180,4 +180,16 @@ export function mcpServers(
     by.set(t.serverName, one)
   }
   return [...by.values()].sort((a, b) => b.tokens - a.tokens || a.server.localeCompare(b.server))
+}
+
+/**
+ * The copy a loading module would duplicate, or null: same plugin name from
+ * another folder. Its own folder is a reload, never a duplicate.
+ */
+export function duplicateOf(
+  self: { name: string; root: string },
+  loading: { name: string; root: string; provenance: string; version?: string },
+): SkippedCopy | null {
+  if (loading.name !== self.name || loading.root === self.root) return null
+  return { provenance: loading.provenance, root: loading.root, version: loading.version ?? null }
 }

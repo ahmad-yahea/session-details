@@ -34,6 +34,7 @@ const tasks = atom({ plugin: 'session-details', key: 'tasks' } as const, [])
 const now = atom({ plugin: 'session-details', key: 'now' } as const, 0)
 const session = atom({ plugin: 'session-details', key: 'session' } as const, null)
 const effort = atom({ plugin: 'session-details', key: 'effort' } as const, null)
+const title = atom({ plugin: 'session-details', key: 'title' } as const, null)
 const limits = atom({ plugin: 'session-details', key: 'limits' } as const, [])
 const agents = atom({ plugin: 'session-details', key: 'agents' } as const, [])
 const mcp = atom({ plugin: 'session-details', key: 'mcp' } as const, [])
@@ -73,6 +74,13 @@ async function refreshSession($: EngineInterface) {
     }))
     await update($, limits, () => windows)
     await update($, now, () => at)
+  } catch {}
+}
+
+async function noteTitle($: EngineInterface, value: string | undefined) {
+  try {
+    const name = value?.trim()
+    if (name) await update($, title, () => name)
   } catch {}
 }
 
@@ -182,6 +190,22 @@ export const register: Register = on => {
     return ran
   })
 
+  // The title rides only on the classic SessionStart and UserPromptSubmit
+  // inputs: set at start or resume, and kept current as each prompt goes in.
+  on('classic.SessionStart', async ($, e, next) => {
+    const ran = await next(e)
+    await noteTitle($, e.session_title)
+
+    return ran
+  })
+
+  on('classic.UserPromptSubmit', async ($, e, next) => {
+    const ran = await next(e)
+    await noteTitle($, e.session_title)
+
+    return ran
+  })
+
   on('turn.step', async function* ($, e, next) {
     try {
       if (e.agentId === undefined) {
@@ -269,6 +293,7 @@ export const register: Register = on => {
     const clock = await read($, now)
     const info = await read($, session)
     const level = await read($, effort)
+    const name = await read($, title)
     const windows = await read($, limits)
     const subagents = await read($, agents)
     const servers = await read($, mcp)
@@ -384,6 +409,13 @@ export const register: Register = on => {
 
       return (
         <Box flexDirection="column">
+          {name ? (
+            <Text bold>{clip(name, width)}</Text>
+          ) : (
+            <Text dimColor italic>
+              {clip('Untitled session', width)}
+            </Text>
+          )}
           <Text>{clip(`${info.model} · effort ${level ?? '—'}`, width)}</Text>
           <Text dimColor>{clip(facts.join(' · '), width)}</Text>
           <Text dimColor>{clip(`▤ ${info.repo ?? basename(info.cwd)}`, width)}</Text>

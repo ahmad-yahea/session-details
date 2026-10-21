@@ -51,6 +51,7 @@ declare module 'claude-code' {
       now: number
       session: SessionView | null
       effort: string | null
+      title: string | null
       limits: LimitView[]
       agents: AgentView[]
       mcp: McpView[]

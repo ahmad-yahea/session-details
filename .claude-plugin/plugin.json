@@ -1,6 +1,6 @@
 {
   "name": "session-details",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "A live side pane for Claude Code: model, effort, cost, context, rate limits with reset countdowns, outputs, background tasks, subagents and MCP servers.",
   "author": { "name": "ahmad-yahea" },
   "license": "MIT",

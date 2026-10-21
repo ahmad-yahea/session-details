@@ -10,7 +10,7 @@ Every section has a clickable `▾`/`▸` header that collapses it.
 
 | Section | Shows |
 | --- | --- |
-| **Session** | Model and effort, cost, number of turns, session age, repo or folder name |
+| **Session** | The session's title, then model and effort, cost, number of turns, session age, repo or folder name |
 | **Environment** | Whether Remote Control is connected, and to which surfaces |
 | **Context** | `% used`, `used / max`, a segmented bar in each category's own colour, and tokens and % per category |
 | **Limits** | The 5-hour, 7-day and spend windows: a bar, % used, and a live "resets in 2h 14m" countdown |

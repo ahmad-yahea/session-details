@@ -6,6 +6,7 @@ import {
   backgroundId,
   barRuns,
   basename,
+  cleanTitle,
   clip,
   duplicateOf,
   fmtElapsed,
@@ -22,6 +23,8 @@ import {
   pushOutput,
   taskLabel,
   textOf,
+  titleDigest,
+  titleDue,
 } from './lib'
 
 const PANE = 'session-details'
@@ -37,6 +40,7 @@ const session = atom({ plugin: 'session-details', key: 'session' } as const, nul
 const effort = atom({ plugin: 'session-details', key: 'effort' } as const, null)
 const title = atom({ plugin: 'session-details', key: 'title' } as const, null)
 const skipped = atom({ plugin: 'session-details', key: 'skipped' } as const, [])
+const autoTitle = atom({ plugin: 'session-details', key: 'autoTitle' } as const, null)
 const limits = atom({ plugin: 'session-details', key: 'limits' } as const, [])
 const agents = atom({ plugin: 'session-details', key: 'agents' } as const, [])
 const mcp = atom({ plugin: 'session-details', key: 'mcp' } as const, [])
@@ -84,6 +88,38 @@ async function noteTitle($: EngineInterface, value: string | undefined) {
     const name = value?.trim()
     if (name) await update($, title, () => name)
   } catch {}
+}
+
+const TITLE_SYSTEM =
+  'You name coding sessions. Read the whole conversation and reply with only a title of 3 to 7 words ' +
+  'in Title Case that says what the session as a whole is about: its main goal and the work done, ' +
+  'not just the latest message. No quotes, no trailing punctuation, nothing else.'
+
+let isNaming = false
+
+/** Names the session from its whole conversation, when one is due. */
+async function nameSession($: EngineInterface) {
+  if (isNaming) return
+  isNaming = true
+  try {
+    const turns = await $.session.turns()
+    if (!titleDue(await read($, autoTitle), turns)) return
+    const digest = titleDigest(await $.session.messages())
+    if (!digest) return
+    const reply = await $.model.complete({
+      model: 'haiku',
+      system: TITLE_SYSTEM,
+      prompt: `The conversation:\n\n${digest}\n\nTitle:`,
+      maxTokens: 30,
+      timeoutMs: 30000,
+    })
+    if (!reply.isAnswered) return
+    const text = cleanTitle(reply.text)
+    if (text) await update($, autoTitle, () => ({ text, turns }))
+  } catch {
+  } finally {
+    isNaming = false
+  }
 }
 
 async function refreshAgents($: EngineInterface) {
@@ -161,6 +197,7 @@ export const register: Register = on => {
       refreshAgents($),
       refreshCrons($),
     ])
+    void nameSession($)
 
     // Ticks only redraw while something runs.
     $.clock.every(1000, async () => {
@@ -236,6 +273,7 @@ export const register: Register = on => {
   on('turn.complete', async ($, e, next) => {
     const ran = await next(e)
     await Promise.all([refreshSession($), refreshAgents($), refreshCrons($)])
+    if (e.agentId === undefined) void nameSession($)
 
     return ran
   })
@@ -309,7 +347,7 @@ export const register: Register = on => {
     const clock = await read($, now)
     const info = await read($, session)
     const level = await read($, effort)
-    const name = await read($, title)
+    const name = (await read($, autoTitle))?.text ?? (await read($, title))
     const dupes = await read($, skipped)
     const windows = await read($, limits)
     const subagents = await read($, agents)

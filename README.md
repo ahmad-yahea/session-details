@@ -10,7 +10,7 @@ Every section has a clickable `▾`/`▸` header that collapses it.
 
 | Section | Shows |
 | --- | --- |
-| **Session** | The session's title, then model and effort, cost, number of turns, session age, repo or folder name |
+| **Session** | A title written from the whole conversation (renewed every 5 turns), then model and effort, cost, number of turns, session age, repo or folder name |
 | **Environment** | Whether Remote Control is connected, and to which surfaces |
 | **Context** | `% used`, `used / max`, a segmented bar in each category's own colour, and tokens and % per category |
 | **Limits** | The 5-hour, 7-day and spend windows: a bar, % used, and a live "resets in 2h 14m" countdown |
@@ -48,9 +48,13 @@ Answer `y` to add the marketplace, then pick a scope (user scope applies to ever
 
 Only one copy ever runs. This can happen when the plugin is enabled at more than one scope, from two marketplaces, or alongside a `--plugin-dir` copy. Whichever copy loads first refuses the others, so you get one pane and one `/session-details`. The Environment section names each skipped copy (`⚠ duplicate skipped: …`) so you can uninstall the one you don't want. Installing at user scope keeps things simple.
 
+## Session titles
+
+After the first turn, the pane reads the whole conversation and asks Haiku, through your own Claude Code session, for a 3–7 word title describing the session as a whole. It renews the title every 5 turns as the work moves on. Until the first title is ready it shows the title Claude Code has, if any, else "Untitled session". Each title costs one small Haiku call.
+
 ## How it works
 
-The mod is a single hooks module (`hooks/register.tsx`). It reads session data from Claude Code's own `$.session`, `$.agent` and context-breakdown APIs and draws a `Pane`. It makes no network calls, writes no files and stores nothing outside the session.
+The mod is a single hooks module (`hooks/register.tsx`). It reads session data from Claude Code's own `$.session`, `$.agent` and context-breakdown APIs and draws a `Pane`. Apart from the small Haiku call that names the session, it makes no network calls of its own, writes no files and stores nothing outside the session.
 
 ## License
 

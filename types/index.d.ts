@@ -40,6 +40,8 @@ export type CronView = { id: string; schedule: string; prompt: string; nextFireA
 
 export type SkippedCopy = { provenance: string; root: string; version: string | null }
 
+export type AutoTitle = { text: string; turns: number }
+
 export type EnvView = { surfaces: string[] }
 
 declare module 'claude-code' {
@@ -55,6 +57,7 @@ declare module 'claude-code' {
       effort: string | null
       title: string | null
       skipped: SkippedCopy[]
+      autoTitle: AutoTitle | null
       limits: LimitView[]
       agents: AgentView[]
       mcp: McpView[]

@@ -193,3 +193,50 @@ export function duplicateOf(
   if (loading.name !== self.name || loading.root === self.root) return null
   return { provenance: loading.provenance, root: loading.root, version: loading.version ?? null }
 }
+
+/** How often, in user turns, a generated title is written again. */
+export const RETITLE_EVERY = 5
+
+/** Whether a title is due: none yet, or RETITLE_EVERY turns since the last. */
+export function titleDue(last: { turns: number } | null, turns: number): boolean {
+  if (turns < 1) return false
+  return last === null || turns - last.turns >= RETITLE_EVERY
+}
+
+/**
+ * The whole conversation as one compact text for naming it: every message,
+ * the person's clipped longer than Claude's, tool names kept. Past `cap`
+ * characters the opening (where the goal is stated) and the latest work are
+ * kept and the middle is cut.
+ */
+export function titleDigest(
+  messages: readonly { role: 'user' | 'assistant'; text: string; toolUses?: readonly { tool: string }[] }[],
+  cap = 12000,
+): string {
+  const lines: string[] = []
+  for (const m of messages) {
+    const text = m.text.replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+    const tools = (m.toolUses ?? []).map(t => t.tool).filter(Boolean)
+    if (!text && tools.length === 0) continue
+    const who = m.role === 'user' ? 'User' : 'Claude'
+    const body = clip(text, m.role === 'user' ? 400 : 200)
+    lines.push(`${who}: ${body}${tools.length ? ` [tools: ${[...new Set(tools)].join(', ')}]` : ''}`)
+  }
+  const all = lines.join('\n')
+  if (all.length <= cap) return all
+  const head = Math.floor(cap * 0.35)
+  return `${all.slice(0, head)}\n…\n${all.slice(all.length - (cap - head))}`
+}
+
+/** A model's reply as a title: first line, no quotes or label, no end stop. */
+export function cleanTitle(raw: string): string {
+  const line = (raw.split('\n').find(l => l.trim()) ?? '').trim()
+  return clip(
+    line
+      .replace(/^(title|session title)\s*:\s*/i, '')
+      .replace(/^["'`*_]+|["'`*_]+$/g, '')
+      .replace(/[.!?:;,]+$/, '')
+      .trim(),
+    70,
+  )
+}
